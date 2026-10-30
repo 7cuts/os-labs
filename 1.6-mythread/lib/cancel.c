@@ -45,7 +45,7 @@ mythread_testcancel(void)
 {
     mythread *self = mythread_self_tcb();
     if (self->canceled) {
-        longjmp(self->env, 0);
+        siglongjmp(self->env, 0);
     }
 }
 
