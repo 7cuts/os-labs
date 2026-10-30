@@ -38,19 +38,17 @@ mythread_mutex_lock(mythread_mutex_t *mu)
             if (mu->owner != 0) {
                 return -EINVAL;
             }
-            /* we have locked the mutex */
+            // we have locked the mutex
             mu->owner = gettid();
             break;
         }
 
-        /* mutex is locked by someone else */
+        // mutex is locked by someone else
         err = futex((uint32_t *)&mu->lock, FUTEX_WAIT, MUTEX_LOCKED);
 
         if (err < 0 && err != -EAGAIN) {
-            /*
-             * err == -EAGAIN means that mutex has been unlocked after CAS
-             * and we can try to lock it on the next iteration.
-             */
+             // err == -EAGAIN means that mutex has been unlocked after CAS
+             // and we can try to lock it on the next iteration.
             return err;
         }
     }
@@ -74,7 +72,7 @@ mythread_mutex_unlock(mythread_mutex_t *mu)
     mu->owner = 0;
     mu->lock = MUTEX_UNLOCKED;
 
-    /* FUTEX_WAIT returns only -EINVAL error or number of woken threads */
+    // FUTEX_WAIT returns only -EINVAL error or number of woken threads
     err = futex((uint32_t *)&mu->lock, FUTEX_WAKE, 1 /* wake only one waiting thread */);
     if (err < 0) {
         return err;

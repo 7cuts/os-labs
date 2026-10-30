@@ -67,13 +67,13 @@ ll_remove(mythread *tcb)
     }
 
     if (!tcb->next) {
-        /* it is the tail*/
+        // it is the tai
         tcb->prev->next = NULL;
         tail = tcb->prev;
         return;
     }
 
-    /* nor head nor tail. we're in the middle */
+    // nor head nor tail. we're in the middle
 
     tcb->prev->next = tcb->next;
     tcb->next->prev = tcb->prev;

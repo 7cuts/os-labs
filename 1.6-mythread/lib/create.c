@@ -102,7 +102,7 @@ mythread_create(mythread_t* thread, void *(*start_routine)(void*), void *arg) {
         sigfillset(&sigmask);
         struct sigaction act = {
             .sa_sigaction = async_cancel_handler,
-            .sa_mask = sigmask, /* block all */
+            .sa_mask = sigmask, // block all
             .sa_flags = SA_SIGINFO,
 
         };
