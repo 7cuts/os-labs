@@ -20,8 +20,8 @@ TEST(test_join_wrong_id) {
     if (r != 0) {
         FAIL("mythread_create failed with error: %s", strerror(-r));
     }
-
-    r = mythread_join(thread - 10, NULL);
+    mythread_t null_thread = 0;
+    r = mythread_join(null_thread, NULL);
 
     if (r != -ESRCH) {
         FAIL("expected mythread_join failed with error -ESRCH but got: %s", strerror(-r));

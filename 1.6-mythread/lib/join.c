@@ -19,14 +19,6 @@ mythread_join(mythread_t thread, void** retval)
 
     mythread *tcb = (mythread *) thread;
 
-    // We should not join the calling thread.
-    if (tcb->tid == gettid()) {
-        // tcb->tid cannot be zero if it is our thread's tcb, because
-        // kernel sets tcb->tid to 0 only when the thread is exiting.
-        // if we're here, our thread has not exited yet.
-        return -EDEADLK;
-    }
-
 
     // Check if `thread` is a valid thread ID.
     ll_lock();
@@ -35,6 +27,15 @@ mythread_join(mythread_t thread, void** retval)
     if (!found) {
         return -ESRCH;
     }
+
+    // We should not join the calling thread.
+    if (tcb->tid == gettid()) {
+        // tcb->tid cannot be zero if it is our thread's tcb, because
+        // kernel sets tcb->tid to 0 only when the thread is exiting.
+        // if we're here, our thread has not exited yet.
+        return -EDEADLK;
+    }
+
 
     // Wait on tid untill it does not equal to zero.
     while (1) {
