@@ -55,7 +55,7 @@ int uthread_create(uthread_t thread, void *(*start_routine)(void *), void *arg)
     }
     // do not forget to unlock them.
 
-    // Memoty layout:  0x0 .. [struct uthread | STACK | GUARD PAGE] .. 0xF..F
+    // Memory layout:  0x0 .. [struct uthread | STACK | GUARD PAGE] .. 0xF..F
 
     uthread *tcb = region;
     void *stack = region + sizeof(uthread);
