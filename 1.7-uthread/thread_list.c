@@ -1,6 +1,7 @@
 #include "uthread_impl.h"
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -17,10 +18,11 @@ ll_add(uthread *tcb)
         // first time calling it. we are in main thread.
         assert(!tail);
         assert(count == 0);
+
         head = &main_tcb;
         tail = head;
-
         srand(time(NULL));
+        count++;
     }
 
     // add new thread structure to the list of threads.
@@ -74,7 +76,7 @@ ll_find(uthread *needle)
 {
     for (uthread* p = head; p != NULL; p = p->next) {
         if (p == needle) {
-            return true;
+           return true;
         }
     }
     return false;
@@ -100,4 +102,10 @@ ll_choose_thread()
         p = p->next;
     }
     return p;
+}
+
+uthread *
+ll_head()
+{
+    return head;
 }

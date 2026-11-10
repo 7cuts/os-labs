@@ -1,36 +1,30 @@
 #include <stdio.h>
 #include "uthread.h"
+#include "uthread_impl.h"
 #include <unistd.h>
 
 int cnt;
 
 void *start_func(void *arg) {
-    printf("i'm started\n");
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
+        //printf("i = %d\n", i);
         cnt++;
+        uthread_yield();
+        //printf("cnt = %d\n", cnt);
     }
+
+    return NULL;
 }
 
 int main() {
+    printf("my pid = %d\n", getpid());
     uthread_t thread;
     uthread_create(&thread, start_func, NULL);
-    uthread_create(&thread, start_func, NULL);
-    uthread_create(&thread, start_func, NULL);
 
-    start_func(NULL);
 
+    for (int i = 0; i < 10; i++) {
+        uthread_yield();
+    }
     printf("cnt = %d\n", cnt);
 
-    sleep(1);
-    for (int i =0; i < 100000; i++) {}
-    printf("cnt = %d\n", cnt);
-
-    sleep(1);
-    for (int i =0; i < 100000; i++) {}
-    printf("cnt = %d\n", cnt);
-
-    sleep(1);
-    for (int i =0; i < 100000; i++) {}
-    printf("cnt = %d\n", cnt);
-    return 0;
 }
