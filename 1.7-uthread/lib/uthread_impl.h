@@ -8,8 +8,10 @@
 
 typedef struct uthread uthread;
 struct uthread {
-    // We need arg only for call a start_routine. after
-    // that we can reuse this field to store retval.
+    uthread_t self;
+
+    /* We need arg only for call a start_routine. after
+     * that we can reuse this field to store retval. */
     union {
         void *arg;
         void *retval;
@@ -20,6 +22,11 @@ struct uthread {
     uthread *next;
     uthread *prev;
     ucontext_t ctx;
+
+    char name[32];
+
+    bool exited;
+
 };
 
 /************** from self.c **************/
@@ -39,5 +46,7 @@ uthread *ll_head();
 
 /*************** from sched.c *************/
 ucontext_t *get_uc_link();
+
+
 
 #endif

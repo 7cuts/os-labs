@@ -11,14 +11,14 @@
 #include "uthread.h"
 #include "uthread_impl.h"
 
-
 #define CTX_SIZE (sizeof(uthread))
 #define STACK_SIZE (8 * 1024 * 1024 - CTX_SIZE)
 #define GUARD_PAGE_SIZE 4096
 #define THREAD_MEM (STACK_SIZE + CTX_SIZE + GUARD_PAGE_SIZE)
 
 
-// Return NULL if cannot alloc
+
+/* Return NULL if cannot alloc */
 static void *
 alloc_thread()
 {
@@ -38,10 +38,11 @@ static void
 thread_start()
 {
     current_thread->retval = current_thread->start_func(current_thread->arg);
+    current_thread->exited = true;
 }
 
 int
-uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg)
+uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg, const char *name)
 {
     if (!start_routine) {
         return -EINVAL;
@@ -49,9 +50,9 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg)
 
     void *region = alloc_thread();
     if (region == NULL) {
-        return -EAGAIN; // mmap failed. not enough memory ?
+        return -EAGAIN; /* mmap failed. not enough memory? */
     }
-    // MEMORY layout:  0x0 .. [struct uthread | STACK | GUARD PAGE] .. 0xF..F
+    /* MEMORY layout:  0x0 .. [struct uthread | STACK | GUARD PAGE] .. 0xF..F */
     uthread *tcb = region;
     void *stack = region + sizeof(uthread);
     void *guard_page = stack + STACK_SIZE;
@@ -63,6 +64,8 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg)
 
     tcb->arg = arg;
     tcb->start_func = start_routine;
+    strncpy(tcb->name, name, sizeof(tcb->name));
+    tcb->self = (uthread_t)tcb;
 
     getcontext(&tcb->ctx);
     tcb->ctx.uc_stack.ss_sp = stack;
@@ -81,5 +84,26 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg)
 
     *thread = (uthread_t) tcb;
 
+    return 0;
+}
+
+int uthread_join(uthread_t thread, void **retval)
+{
+    uthread *tcb = (uthread *) thread;
+    bool found = ll_find(tcb);
+
+    if (!found) {
+        return -EINVAL;
+    }
+
+    while (!tcb->exited) {
+        uthread_yield();
+    }
+
+    if (retval)
+    {
+        *retval = tcb->retval;
+    }
+    // TODO: clean memory
     return 0;
 }

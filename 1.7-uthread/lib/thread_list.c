@@ -20,6 +20,9 @@ ll_add(uthread *tcb)
         assert(count == 0);
 
         head = &main_tcb;
+
+        strncpy(main_tcb.name, "main", sizeof(main_tcb.name));
+        main_tcb.self = (uthread_t) &main_tcb;
         tail = head;
         srand(time(NULL));
         count++;
