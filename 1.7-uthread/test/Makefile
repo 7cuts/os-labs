@@ -9,7 +9,7 @@ TEST_SRCS := $(wildcard t/*.c)
 # каталог, куда в итоге кладётся libuthread.so (после mv)
 LIBDIR := $(CURDIR)
 
-all: clean test
+all: clean $(LIBS) test
 
 test: $(BIN)
 	LD_LIBRARY_PATH=$(LIBDIR):$${LD_LIBRARY_PATH} ./$(BIN)
@@ -25,4 +25,4 @@ clean:
 	rm -f $(LIBS) $(BIN)
 	$(MAKE) -C ../lib clean
 
-.PHONY: all clean test
+.PHONY: all clean test $(LIBS)
