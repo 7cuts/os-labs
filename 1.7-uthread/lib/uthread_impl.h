@@ -3,8 +3,13 @@
 
 #include <stdbool.h>
 #include <ucontext.h>
-
 #include "uthread.h"
+
+#define CTX_SIZE (sizeof(uthread))
+#define STACK_SIZE (8 * 1024 * 1024 - CTX_SIZE)
+#define GUARD_PAGE_SIZE 4096
+#define THREAD_MEM (STACK_SIZE + CTX_SIZE + GUARD_PAGE_SIZE)
+
 
 typedef struct uthread uthread;
 struct uthread {
@@ -28,6 +33,8 @@ struct uthread {
     bool exited;
 
 };
+
+
 
 /************** from self.c **************/
 extern uthread *current_thread;

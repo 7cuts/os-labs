@@ -1,20 +1,10 @@
-
+#include "uthread.h"
+#include "uthread_impl.h"
 #include <assert.h>
 #include <errno.h>
-#include <sched.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <ucontext.h>
-
-#include "uthread.h"
-#include "uthread_impl.h"
-
-#define CTX_SIZE (sizeof(uthread))
-#define STACK_SIZE (8 * 1024 * 1024 - CTX_SIZE)
-#define GUARD_PAGE_SIZE 4096
-#define THREAD_MEM (STACK_SIZE + CTX_SIZE + GUARD_PAGE_SIZE)
 
 
 
@@ -104,32 +94,5 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg, con
 
     *thread = (uthread_t) tcb;
 
-    return 0;
-}
-
-int uthread_join(uthread_t thread, void **retval)
-{
-    uthread *tcb = (uthread *) thread;
-    bool found = ll_find(tcb);
-
-    if (!found) {
-        return -EINVAL;
-    }
-
-    UTHREAD_DEBUG("joining thread %s", tcb->name);
-
-    while (!tcb->exited) {
-        uthread_yield();
-    }
-
-    if (retval)
-    {
-        *retval = tcb->retval;
-    }
-
-    UTHREAD_DEBUG("remove thread %s from linked list", tcb->name);
-    ll_remove(tcb);
-    int r = munmap(tcb, THREAD_MEM);
-    assert(r == 0);
     return 0;
 }

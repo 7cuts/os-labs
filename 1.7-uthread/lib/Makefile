@@ -1,4 +1,4 @@
-SOURCES = sched.c self.c thread_list.c uthread.c log.c
+SOURCES = sched.c self.c thread_list.c create.c join.c log.c
 
 CC=gcc
 
