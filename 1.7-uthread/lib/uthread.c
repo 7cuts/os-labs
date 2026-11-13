@@ -44,10 +44,9 @@ thread_start()
 int
 uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg, const char *name)
 {
-    if (!start_routine) {
+    if (!thread || !start_routine) {
         return -EINVAL;
     }
-
 
     if (!current_thread) {
         /* assume that ll_head() is main thread tcb */
