@@ -25,7 +25,7 @@ alloc_thread()
     void *res = mmap(NULL, THREAD_MEM,
         PROT_READ | PROT_WRITE, MAP_STACK | MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-    assert(errno != -EINVAL);
+    assert(errno != EINVAL);
     if (res == MAP_FAILED) {
         return NULL;
     }
@@ -47,6 +47,14 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg, con
     if (!start_routine) {
         return -EINVAL;
     }
+
+
+    if (!current_thread) {
+        /* assume that ll_head() is main thread tcb */
+        current_thread = ll_head();
+    }
+
+    UTHREAD_DEBUG("creating thread %s", name);
 
     void *region = alloc_thread();
     if (region == NULL) {
@@ -78,9 +86,6 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg, con
         0);
 
     ll_add(tcb);
-    /* assume that ll_head() is main thread tcb */
-    current_thread = ll_head();
-    getcontext(&ll_head()->ctx);
 
     *thread = (uthread_t) tcb;
 
@@ -96,6 +101,8 @@ int uthread_join(uthread_t thread, void **retval)
         return -EINVAL;
     }
 
+    UTHREAD_DEBUG("joining thread %s", tcb->name);
+
     while (!tcb->exited) {
         uthread_yield();
     }
@@ -104,6 +111,10 @@ int uthread_join(uthread_t thread, void **retval)
     {
         *retval = tcb->retval;
     }
-    // TODO: clean memory
+
+    UTHREAD_DEBUG("remove thread %s from linked list", tcb->name);
+    ll_remove(tcb);
+    int r = munmap(tcb, THREAD_MEM);
+    assert(r == 0);
     return 0;
 }

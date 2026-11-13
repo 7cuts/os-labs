@@ -47,6 +47,12 @@ uthread *ll_head();
 /*************** from sched.c *************/
 ucontext_t *get_uc_link();
 
+// #define LOG_DEBUG
 
+#ifdef LOG_DEBUG
+#define UTHREAD_DEBUG(fmt, ...) uthread_printf(fmt, ##__VA_ARGS__)
+#else
+#define UTHREAD_DEBUG(fmt, ...)
+#endif
 
 #endif

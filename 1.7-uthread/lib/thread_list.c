@@ -91,20 +91,32 @@ ll_length()
     return count;
 }
 
+/* May return NULL in case all threads is exited */
 uthread *
-ll_choose_thread()
+ll_choose_thread(void)
 {
-    int num = rand() % count;
+    int alive = 0;
+    for (uthread *p = head; p; p = p->next) {
+        if (!p->exited) {
+            alive++;
+        }
+    }
 
-    if (count == 0) {
+    if (alive == 0) {
         return NULL;
     }
 
-    uthread *p = head;
-    for (int i = 0; i < num; i++) {
-        p = p->next;
+    int num = rand() % alive;
+
+    for (uthread *p = head; p; p = p->next) {
+        /* iterate only through running threads */
+        if (!p->exited) {
+            if (num-- == 0) {
+                return p;
+            }
+        }
     }
-    return p;
+    return NULL;
 }
 
 uthread *

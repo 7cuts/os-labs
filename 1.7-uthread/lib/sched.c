@@ -10,23 +10,28 @@
 
 #include "uthread_impl.h"
 
-static ucontext_t sched_ctx;
-
-
+char sched_stack[8 * 1024 * 1024];
 
 void
 uthread_yield()
 {
+    if (!current_thread) {
+        /* assume that ll_head() is main thread tcb */
+        current_thread = ll_head();
+    }
+
     uthread *prev_current = current_thread;
-    do {
-        current_thread = ll_choose_thread();
-    } while (current_thread == prev_current);
+    uthread *next = ll_choose_thread();
+    if (next) {
+        current_thread = next;
+    } else {
+        return;
+    }
 
     volatile int jumped = 0;
     getcontext(&prev_current->ctx);
 
     if (jumped) {
-        //printf("[uthread_yield] jumped = true => return to func\n");
         return;
     }
     jumped = 1;
@@ -39,15 +44,17 @@ uthread_yield()
 ucontext_t *
 get_uc_link()
 {
-    volatile int jumped = 0;
-    getcontext(&sched_ctx);
+    static ucontext_t sched_ctx;
+    static bool inited;
 
-    if (jumped) {
-        /* uthread returned and it's context now is sched_ctx */
-        /* remove thread here .... */
-        uthread_yield();
+    if (!inited) {
+        getcontext(&sched_ctx);
+        sched_ctx.uc_stack.ss_sp = sched_stack;
+        sched_ctx.uc_stack.ss_size = sizeof(sched_stack);
+        sched_ctx.uc_link = NULL;
+        makecontext(&sched_ctx, uthread_yield, 0);
+        inited = true;
     }
 
-    jumped = 1;
     return &sched_ctx;
 }
