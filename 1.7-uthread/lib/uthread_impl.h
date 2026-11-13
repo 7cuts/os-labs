@@ -31,15 +31,11 @@ struct uthread {
 
 /************** from self.c **************/
 extern uthread *current_thread;
-/********** from thread_list.c ***********/
 
+/********** from thread_list.c ***********/
 void ll_add(uthread *tcb);
 void ll_remove(uthread *tcb);
 bool ll_find(uthread *needle);
-
-/** Get the number of threads
- * O(1) complexity
- */
 int ll_length();
 uthread *ll_choose_thread();
 uthread *ll_head();
@@ -47,8 +43,7 @@ uthread *ll_head();
 /*************** from sched.c *************/
 ucontext_t *get_uc_link();
 
-// #define LOG_DEBUG
-
+// #define LOG_DEBUG /* define this enable debug prints from library */
 #ifdef LOG_DEBUG
 #define UTHREAD_DEBUG(fmt, ...) uthread_printf(fmt, ##__VA_ARGS__)
 #else
