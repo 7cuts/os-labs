@@ -1,9 +1,9 @@
 #include "../test.h"
 #include <string.h>
 
-int cnt;
+static int cnt;
 
-void *
+static void *
 start_func(void *arg)
 {
     for (int i = 0; i < 10; i++) {

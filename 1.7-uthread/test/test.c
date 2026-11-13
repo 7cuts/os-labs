@@ -3,6 +3,7 @@
 #include "test.h"
 
 extern test_result_t test_basic(FILE *f);
+extern test_result_t test_arg(FILE *f);
 
 #define RED "\033[31m"
 #define RESET "\033[0m"
@@ -14,6 +15,14 @@ bool do_test(test_result_t (*func)(FILE *f), FILE *f) {
     return res.ok;
 }
 
+void
+test_all(FILE *logfile)
+{
+
+    do_test(test_basic, logfile);
+    do_test(test_arg, logfile);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -22,6 +31,8 @@ main(int argc, char *argv[])
         fprintf(stderr, "failed to create log file \"test.log\"\n");
         return 1;
     }
-    do_test(test_basic, f);
+    test_all(f);
     putc('\n', stdout);
+
+    fclose(f);
 }
