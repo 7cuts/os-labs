@@ -21,7 +21,8 @@ ll_add(uthread *tcb)
 
         head = &main_tcb;
 
-        strncpy(main_tcb.name, "main", sizeof(main_tcb.name));
+        char main_name[] = "main";
+        strncpy(main_tcb.name, main_name, sizeof(main_name));
         main_tcb.self = (uthread_t) &main_tcb;
         tail = head;
         srand(time(NULL));

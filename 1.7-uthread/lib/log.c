@@ -1,6 +1,7 @@
 #include "uthread_impl.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 static void uthread_logv(FILE *file, bool use_color, const char *format, va_list ap)
 {
@@ -10,7 +11,7 @@ static void uthread_logv(FILE *file, bool use_color, const char *format, va_list
         file = stderr;
 
     /* если self ещё не инициализирован — считаем, что это main */
-    const char *name = (self && self->name) ? self->name : "main";
+    const char *name = (self && strlen(self->name) > 0) ? self->name : "main";
 
     if (use_color)
         fprintf(file, "[\033[33m%s\033[0m] ", name);

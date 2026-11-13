@@ -8,7 +8,7 @@
 
 bool do_test(test_result_t (*func)(FILE *f), FILE *f) {
     test_result_t res = func(f);
-    printf("[%4s] %s", res.ok ? GREEN"OK"RESET : RED"FAIL"RESET, res.message);
+    printf(":: [%4s] %s", res.ok ? GREEN"OK"RESET : RED"FAIL"RESET, res.message);
     return res.ok;
 }
 

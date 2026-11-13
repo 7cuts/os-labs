@@ -71,7 +71,23 @@ uthread_create(uthread_t* thread, void *(*start_routine)(void *), void *arg, con
 
     tcb->arg = arg;
     tcb->start_func = start_routine;
-    strncpy(tcb->name, name, sizeof(tcb->name));
+
+    assert(sizeof(tcb->name) != sizeof(const char *) && "tcb->name shoud not be a pointer but an array!");
+
+    size_t name_len = name ? strlen(name) : 0;
+    if (name_len > sizeof(tcb->name) - 1) {
+        name_len = sizeof(tcb->name) - 1;
+    }
+
+    if (name_len > 0){
+        strncpy(tcb->name, name, name_len);
+        tcb->name[name_len] = 0;
+    } else {
+        const char name[] = "unknwon thread name";
+        strncpy(tcb->name, name, sizeof(name));
+        tcb->name[sizeof(name)] = 0;
+    }
+
     tcb->self = (uthread_t)tcb;
 
     getcontext(&tcb->ctx);
