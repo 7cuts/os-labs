@@ -4,7 +4,7 @@
 
 static void uthread_logv(FILE *file, bool use_color, const char *format, va_list ap)
 {
-    uthread *self = (uthread *)uthread_self();
+    uthread *self = current_thread;
 
     if (!file)
         file = stderr;
