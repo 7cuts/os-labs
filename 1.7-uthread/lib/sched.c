@@ -23,6 +23,7 @@ uthread_yield()
     uthread *prev_current = current_thread;
     uthread *next = ll_choose_thread();
     if (next) {
+        UTHREAD_DEBUG("switch %s -> %s", current_thread->name, next->name);
         current_thread = next;
     } else {
         return;
