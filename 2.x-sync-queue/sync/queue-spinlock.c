@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <assert.h>
 
+#define QUEUE_SYNC_SPINLOCK
 #include "queue.h"
 
 void *qmonitor(void *arg) {
@@ -51,8 +52,19 @@ queue_t* queue_init(int max_count) {
 }
 
 void queue_destroy(queue_t *q) {
+    int err;
+
     if (!q)  {
         return;
+    }
+
+    err = pthread_cancel(q->qmonitor_tid);
+    assert(err == 0);
+
+    err = pthread_join(q->qmonitor_tid, NULL);
+    if (err) {
+        printf("Cannot destroy queue: could not join qmonitor thread: %s\n", strerror(err));
+        abort();
     }
 
     qnode_t *node = q->first;
@@ -66,6 +78,19 @@ void queue_destroy(queue_t *q) {
     q->first = NULL;
     q->last = NULL;
     q->count = 0;
+    err = pthread_spin_trylock(&q->lock);
+    if (err) {
+        // Somebody is holding the lock. According
+        // to man pthread_spin_destroy(3): destroying
+        // locked lock is UB.
+        printf("Cannot destroy queue: somebody is holding the lock: %s\n", strerror(err));
+        abort();
+    }
+
+    pthread_spin_unlock(&q->lock);
+    pthread_spin_destroy(&q->lock);
+
+
     free(q);
 
     printf(":: queue freed\n");
@@ -76,17 +101,19 @@ int queue_add(queue_t *q, int val) {
 
 	assert(q->count <= q->max_count);
 
-	if (q->count == q->max_count)
-		return 0;
-
 	qnode_t *new = malloc(sizeof(qnode_t));
 	if (!new) {
 		printf("Cannot allocate memory for new node\n");
 		abort();
 	}
-
 	new->val = val;
 	new->next = NULL;
+
+	pthread_spin_lock(&q->lock);
+	if (q->count == q->max_count) {
+	    pthread_spin_unlock(&q->lock);
+	    return 0;
+	}
 
 	if (!q->first) {
         //printf("writer: queue_add(): q->first == NULL\n");
@@ -98,6 +125,8 @@ int queue_add(queue_t *q, int val) {
 	}
 
 	q->count++;
+	pthread_spin_unlock(&q->lock);
+
 	q->add_count++;
 
 	return 1;
@@ -108,22 +137,22 @@ int queue_get(queue_t *q, int *val) {
 
 	assert(q->count >= 0);
 
+	pthread_spin_lock(&q->lock);
 	if (q->count == 0) {
+	    pthread_spin_unlock(&q->lock);
 	    return 0;
 	}
 
 	qnode_t *tmp = q->first;
-	if (!tmp) {
-	    printf("reader: q->first == NULL, q->count = %d\n", q->count);
-	}
 
 	*val = tmp->val;
 	q->first = q->first->next;
 
-	free(tmp);
 	q->count--;
 	q->get_count++;
+	pthread_spin_unlock(&q->lock);
 
+	free(tmp);
 	return 1;
 }
 

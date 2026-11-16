@@ -19,6 +19,10 @@ typedef struct _Queue {
 #ifdef QUEUE_SYNC_SPINLOCK
     pthread_spinlock_t lock;
 #endif
+#ifdef QUEUE_SYNC_MUTEX
+    pthread_mutex_t mutex;
+#endif
+
 	qnode_t *first;
 	qnode_t *last;
 

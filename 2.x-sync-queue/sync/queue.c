@@ -107,9 +107,6 @@ int queue_get(queue_t *q, int *val) {
 	}
 
 	qnode_t *tmp = q->first;
-	if (!tmp) {
-	    printf("reader: q->first == NULL, q->count = %d\n", q->count);
-	}
 
 	*val = tmp->val;
 	q->first = q->first->next;

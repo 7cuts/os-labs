@@ -1,4 +1,6 @@
 #define _GNU_SOURCE
+#include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -59,7 +61,7 @@ void *writer(void *arg) {
 	queue_t *q = (queue_t *)arg;
 	printf("writer [%d %d %d]\n", getpid(), getppid(), gettid());
 
-	set_cpu(1);
+	set_cpu(12);
 
 	while (1) {
 		int ok = queue_add(q, i);
@@ -71,14 +73,33 @@ void *writer(void *arg) {
 	return NULL;
 }
 
-int main() {
+int parse_args(int argc, char **argv) {
+
+    if (argc != 2) {
+        printf("usage:\n\t %s <queue size>\n", argv[0]);
+        exit(1);
+    }
+
+    char *endptr = NULL;
+    long queue_sz = strtol(argv[1], &endptr, 10);
+
+    bool valid = endptr != NULL && *endptr == '\0' && argv[1] != NULL;
+    if (queue_sz <= 0 || queue_sz > INT_MAX ||!valid) {
+        printf("parse_args: bad queue size or it is out of integer range.\n");
+        exit(2);
+    }
+
+    return queue_sz;
+}
+
+int main(int argc, char **argv) {
 	pthread_t tid;
 	queue_t *q;
 	int err;
 
 	printf("main [%d %d %d]\n", getpid(), getppid(), gettid());
 
-	q = queue_init(100000);
+	q = queue_init(parse_args(argc, argv));
 
 	err = pthread_create(&tid, NULL, reader, q);
 	if (err) {
