@@ -3,6 +3,7 @@
 
 #define _GNU_SOURCE
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,21 +21,36 @@ typedef struct _Queue {
 #ifdef QUEUE_SYNC_SPINLOCK
     pthread_spinlock_t lock;
 #endif
+
+
 #ifdef QUEUE_SYNC_MUTEX
     pthread_mutex_t mutex;
 #endif
+
+
 #ifdef QUEUE_SYNC_CONDVAR
     pthread_mutex_t mutex;
     // need both full and empty conditions if use more than 2 threads
     pthread_cond_t cond_queue_full;
     pthread_cond_t cond_queue_empty;
 #endif
+
+
+#ifdef QUEUE_SYNC_SEMAPHORE
+    pthread_mutex_t mutex;
+    sem_t count; // use count as semaphore
+    sem_t free;  // free should always equalcs max_count - count
+#endif
+#ifndef QUEUE_SYNC_SEMAPHORE
+    int count;
+#endif
+
+
 	qnode_t *first;
 	qnode_t *last;
 
 	pthread_t qmonitor_tid;
 
-	int count;
 	int max_count;
 
 	// queue statistics
