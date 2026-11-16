@@ -2,6 +2,7 @@
 #define __FITOS_QUEUE_H__
 
 #define _GNU_SOURCE
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,9 @@ typedef struct _QueueNode {
 } qnode_t;
 
 typedef struct _Queue {
+#ifdef QUEUE_SYNC_SPINLOCK
+    pthread_spinlock_t lock;
+#endif
 	qnode_t *first;
 	qnode_t *last;
 

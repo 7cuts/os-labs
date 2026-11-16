@@ -39,6 +39,7 @@ queue_t* queue_init(int max_count) {
 	if (err) {
 		printf("queue_init: pthread_spin_init() failed: %s\n", strerror(err));
 		abort();
+	}
 
 	err = pthread_create(&q->qmonitor_tid, NULL, qmonitor, q);
 	if (err) {
