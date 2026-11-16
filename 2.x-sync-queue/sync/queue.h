@@ -16,13 +16,19 @@ typedef struct _QueueNode {
 } qnode_t;
 
 typedef struct _Queue {
+
 #ifdef QUEUE_SYNC_SPINLOCK
     pthread_spinlock_t lock;
 #endif
 #ifdef QUEUE_SYNC_MUTEX
     pthread_mutex_t mutex;
 #endif
-
+#ifdef QUEUE_SYNC_CONDVAR
+    pthread_mutex_t mutex;
+    // need both full and empty conditions if use more than 2 threads
+    pthread_cond_t cond_queue_full;
+    pthread_cond_t cond_queue_empty;
+#endif
 	qnode_t *first;
 	qnode_t *last;
 

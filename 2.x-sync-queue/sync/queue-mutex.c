@@ -12,7 +12,10 @@ void *qmonitor(void *arg) {
 	printf("qmonitor: [%d %d %d]\n", getpid(), getppid(), gettid());
 
 	while (1) {
+	    pthread_mutex_lock(&q->mutex);
 		queue_print_stats(q);
+		pthread_mutex_unlock(&q->mutex);
+
 		sleep(1);
 	}
 
