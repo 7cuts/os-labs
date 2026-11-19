@@ -4,10 +4,11 @@
 #include <pthread.h>
 #include <assert.h>
 
-#define QUEUE_SYNC_SEMAPHORE
+#define QUEUE_SYNC_SEMAPHORE// WARNING!!! do not forget to define it during compilation.
 #include "queue.h"
 
 void *qmonitor(void *arg) {
+    pthread_cancel(pthread_self());
 	queue_t *q = (queue_t *)arg;
 
 	printf("qmonitor: [%d %d %d]\n", getpid(), getppid(), gettid());
@@ -117,15 +118,22 @@ void queue_destroy(queue_t *q) {
     printf(":: queue freed\n");
 }
 
+static void cleanup_malloc(void *arg) {
+    free(arg);
+}
+
 int queue_add(queue_t *q, int val) {
 	q->add_attempts++;
 
 
 	qnode_t *new = malloc(sizeof(qnode_t));
+
 	if (!new) {
 		printf("Cannot allocate memory for new node\n");
 		abort();
 	}
+	pthread_cleanup_push(cleanup_malloc, new); // sem_wait is cancelation point
+
 	new->val = val;
 	new->next = NULL;
 
@@ -148,6 +156,8 @@ int queue_add(queue_t *q, int val) {
 	}
 
 	pthread_mutex_unlock(&q->mutex);
+
+	pthread_cleanup_pop(0); // do not free "new".
 	sem_post(&q->count);
 
 	q->add_count++;

@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -16,6 +17,8 @@
 
 #define RED "\033[41m"
 #define NOCOLOR "\033[0m"
+
+#define WORKING_TIME_SECONDS 10
 
 void set_cpu(int n) {
 	int err;
@@ -68,6 +71,8 @@ void *writer(void *arg) {
 		if (!ok)
 			continue;
 		i++;
+
+		usleep(1);
 	}
 
 	return NULL;
@@ -93,15 +98,15 @@ int parse_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	pthread_t tid;
+    pthread_t reader_tid;
+    pthread_t writer_tid;
 	queue_t *q;
 	int err;
 
 	printf("main [%d %d %d]\n", getpid(), getppid(), gettid());
-
 	q = queue_init(parse_args(argc, argv));
 
-	err = pthread_create(&tid, NULL, reader, q);
+	err = pthread_create(&reader_tid, NULL, reader, q);
 	if (err) {
 		printf("main: pthread_create() failed: %s\n", strerror(err));
 		return -1;
@@ -109,13 +114,47 @@ int main(int argc, char **argv) {
 
 	sched_yield();
 
-	err = pthread_create(&tid, NULL, writer, q);
+	err = pthread_create(&writer_tid, NULL, writer, q);
 	if (err) {
 		printf("main: pthread_create() failed: %s\n", strerror(err));
 		return -1;
 	}
 
-	// TODO: join threads
+	sleep(WORKING_TIME_SECONDS);
+
+	printf("main: canceling threads...\n");
+
+	err = pthread_cancel(reader_tid);
+	assert(!err);
+
+	err = pthread_cancel(writer_tid);
+	assert(!err);
+
+	puts("main: joining reader...");
+	void *retval;
+	err = pthread_join(reader_tid, &retval);
+	if (err) {
+    	printf("main: pthread_join(reader_tid) failed: %s\n", strerror(err));
+    	return -1;
+	}
+	assert(retval == PTHREAD_CANCELED);
+
+	puts("main: joining reader complete");
+	puts("main: joining writer...");
+	err = pthread_join(writer_tid, &retval);
+	if (err) {
+    	printf("main: pthread_join(writer_tid) failed: %s\n", strerror(err));
+    	return -1;
+	}
+	assert(retval == PTHREAD_CANCELED);
+	puts("main: joining writer complete");
+
+
+	printf("get_count: %ld\n", q->get_count);
+	printf("add_count: %ld\n", q->add_count);
+
+	puts("main: destroing queue...");
+	queue_destroy(q);
 
 	pthread_exit(NULL);
 

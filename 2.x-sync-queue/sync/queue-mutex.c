@@ -3,10 +3,11 @@
 #include <pthread.h>
 #include <assert.h>
 
-#define QUEUE_SYNC_MUTEX
+#define QUEUE_SYNC_MUTEX// WARNING!!! do not forget to define it during compilation.
 #include "queue.h"
 
 void *qmonitor(void *arg) {
+//    pthread_cancel(pthread_self());
 	queue_t *q = (queue_t *)arg;
 
 	printf("qmonitor: [%d %d %d]\n", getpid(), getppid(), gettid());
@@ -101,6 +102,7 @@ void queue_destroy(queue_t *q) {
 }
 
 int queue_add(queue_t *q, int val) {
+    pthread_testcancel();
 	q->add_attempts++;
 
 	assert(q->count <= q->max_count);
@@ -115,7 +117,11 @@ int queue_add(queue_t *q, int val) {
 
 	pthread_mutex_lock(&q->mutex);
 	if (q->count == q->max_count) {
+        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	    pthread_mutex_unlock(&q->mutex);
+		usleep(1);
+	    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		free(new);
 	    return 0;
 	}
 
@@ -137,13 +143,19 @@ int queue_add(queue_t *q, int val) {
 }
 
 int queue_get(queue_t *q, int *val) {
+    pthread_testcancel();
 	q->get_attempts++;
 
 	assert(q->count >= 0);
 
 	pthread_mutex_lock(&q->mutex);
 	if (q->count == 0) {
+	    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	    pthread_mutex_unlock(&q->mutex);
+		//sched_yield();
+		usleep(10);
+	    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		pthread_testcancel();
 	    return 0;
 	}
 

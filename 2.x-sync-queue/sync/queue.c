@@ -60,6 +60,7 @@ void queue_destroy(queue_t *q) {
     q->first = NULL;
     q->last = NULL;
     q->count = 0;
+
     free(q);
 
     printf(":: queue freed\n");

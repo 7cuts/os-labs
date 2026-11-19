@@ -3,10 +3,15 @@
 #include <pthread.h>
 #include <assert.h>
 
-#define QUEUE_SYNC_CONDVAR
+#define QUEUE_SYNC_CONDVAR // WARNING!!! do not forget to define it during compilation.
 #include "queue.h"
 
+static void cleanup_mutex(void *arg) {
+    pthread_mutex_unlock((pthread_mutex_t *) arg);
+}
+
 void *qmonitor(void *arg) {
+    pthread_cancel(pthread_self());
 	queue_t *q = (queue_t *)arg;
 
 	printf("qmonitor: [%d %d %d]\n", getpid(), getppid(), gettid());
@@ -100,6 +105,7 @@ void queue_destroy(queue_t *q) {
 }
 
 int queue_add(queue_t *q, int val) {
+    pthread_testcancel();
     int err;
 
 	q->add_attempts++;
@@ -115,6 +121,7 @@ int queue_add(queue_t *q, int val) {
 	new->next = NULL;
 
 	pthread_mutex_lock(&q->mutex);
+	pthread_cleanup_push(cleanup_mutex, &q->mutex);
 	while (q->count == q->max_count) {
 		err = pthread_cond_wait(&q->cond_queue_full, &q->mutex);
 		if (err) {
@@ -133,6 +140,8 @@ int queue_add(queue_t *q, int val) {
 	}
 
 	q->count++;
+
+	pthread_cleanup_pop(0);
 	pthread_mutex_unlock(&q->mutex);
 	// signal than now queue is not empty
 	pthread_cond_signal(&q->cond_queue_empty);
@@ -143,12 +152,18 @@ int queue_add(queue_t *q, int val) {
 }
 
 int queue_get(queue_t *q, int *val) {
+    pthread_testcancel();
     int err;
+    qnode_t *tmp;
 	q->get_attempts++;
 
 	assert(q->count >= 0);
 
 	pthread_mutex_lock(&q->mutex);
+
+	// because pthread_cond_wait is a cancellation point
+	pthread_cleanup_push(cleanup_mutex, &q->mutex);
+
 	while (q->count == 0) {
 	    err = pthread_cond_wait(&q->cond_queue_empty, &q->mutex);
     	if (err) {
@@ -157,13 +172,15 @@ int queue_get(queue_t *q, int *val) {
     	}
 	}
 
-	qnode_t *tmp = q->first;
+	tmp = q->first;
 
 	*val = tmp->val;
 	q->first = q->first->next;
 
 	q->count--;
 	q->get_count++;
+
+	pthread_cleanup_pop(0);
 	pthread_mutex_unlock(&q->mutex);
 
 	// signal that now queue is not empty
